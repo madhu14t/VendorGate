@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VendorGate — vendor onboarding review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#edf0f4; --card:#fff; --ink:#16213a; --muted:#5d6b82; --line:#d5dbe5; --soft:#f5f7fa;
+  --accent:#2b4acb; --accent-soft:#e6ebfc;
+  --ok:#0e7a5f; --ok-soft:#dff3ec; --warn:#a86400; --warn-soft:#fbefd6; --bad:#b3203f; --bad-soft:#fbe3e8;
+  --sans:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+.top{background:var(--ink);color:#fff;position:sticky;top:0;z-index:20}
+.top-in{max-width:1320px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:28px}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand i{width:22px;height:22px;border:2px solid #fff;border-radius:6px;display:grid;place-items:center;font-style:normal;font-size:13px}
+nav{display:flex;gap:4px;height:100%}
+nav button{background:none;border:0;color:#aab5cd;padding:0 16px;cursor:pointer;border-bottom:3px solid transparent;font-weight:500}
+nav button[aria-selected=true]{color:#fff;border-bottom-color:#7f96ff}
+.engine{margin-left:auto;font-size:13px;color:#aab5cd;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:#e0a72d}
+.dot.on{background:#3ecf9d}
+
+main{max-width:1320px;margin:0 auto;padding:24px}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;grid-template-columns:minmax(360px,440px) 1fr;gap:24px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.panel h2{font-size:15px;margin:0;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:600}
+.pad{padding:16px 18px}
+
+/* scenarios */
+.scen{display:grid;gap:6px}
+.scen button{text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer}
+.scen button:hover{border-color:var(--accent)}
+.scen button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.scen b{display:block;font-weight:600}
+.scen span{font-size:13px;color:var(--muted)}
+
+/* form */
+fieldset{border:0;margin:0;padding:0 0 6px}
+legend{font-weight:600;padding:12px 0 6px;font-size:14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f .full{grid-column:1/-1}
+label.fld{display:block;font-size:12.5px;color:var(--muted)}
+label.fld input,label.fld select{display:block;width:100%;margin-top:3px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:14px;color:var(--ink)}
+label.fld input.mono{font-family:var(--mono);font-size:13px}
+.docs{display:grid;gap:6px}
+.doc{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.doc input[type=text]{grid-column:2;padding:4px 7px;border:1px solid var(--line);border-radius:5px;font-size:12.5px;display:none}
+.doc.on input[type=text]{display:block}
+.doc.on{background:var(--soft)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer}
+.btn:hover{background:#2340b4}.btn[disabled]{opacity:.55;cursor:wait}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--ink);background:#fff}
+.bar{display:flex;gap:10px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--card);border-radius:0 0 10px 10px}
+
+/* run view */
+.empty{padding:56px 24px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.tape{padding:8px 18px 18px}
+.stage{position:relative;padding:12px 0 6px 30px}
+.stage::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--line)}
+.node{position:absolute;left:0;top:16px;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--line);display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+.stage.running .node{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.stage.end-pass .node{background:var(--ok);border-color:var(--ok)}
+.stage.end-warn .node{background:var(--warn);border-color:var(--warn)}
+.stage.end-fail .node,.stage.end-critical .node{background:var(--bad);border-color:var(--bad)}
+.stage.end-pass .node::after{content:"✓"}.stage.end-warn .node::after{content:"!"}
+.stage.end-fail .node::after,.stage.end-critical .node::after{content:"✕"}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stage h3{margin:0;font-size:15px;font-weight:600}
+.stage .sd{font-size:13px;color:var(--muted)}
+.checks{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.chk{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:8px 10px;border-radius:7px;background:var(--soft);font-size:13.5px;animation:in .25s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(4px)}}
+.chk b{font-weight:600}.chk p{margin:1px 0 0;color:var(--muted);overflow-wrap:anywhere}
+.ico{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--muted);margin-top:1px}
+.chk.pass .ico{background:var(--ok)}.chk.warn .ico{background:var(--warn)}
+.chk.fail .ico,.chk.critical .ico{background:var(--bad)}
+.chk.fail,.chk.critical{background:var(--bad-soft)}.chk.warn{background:var(--warn-soft)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;margin-left:6px;background:var(--accent-soft);color:var(--accent)}
+.tag.fr{background:var(--bad-soft);color:var(--bad)}
+
+/* verdict — the one memorable element */
+.verdict{margin:8px 18px 4px;border-radius:10px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;border:1px solid}
+.verdict.v-approved{background:var(--ok-soft);border-color:var(--ok);--c:var(--ok)}
+.verdict.v-pending{background:var(--warn-soft);border-color:var(--warn);--c:var(--warn)}
+.verdict.v-rejected{background:var(--bad-soft);border-color:var(--bad);--c:var(--bad)}
+.stamp{font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--c);border:3px solid var(--c);border-radius:8px;padding:8px 16px;transform:rotate(-5deg);animation:stamp .35s cubic-bezier(.2,1.6,.4,1) both;box-shadow:inset 0 0 0 2px var(--soft)}
+@keyframes stamp{from{transform:rotate(-14deg) scale(1.7);opacity:0}}
+.verdict h4{margin:0 0 4px;font-size:15px}
+.risk{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.risk i{flex:1;height:6px;background:rgba(0,0,0,.09);border-radius:9px;overflow:hidden;max-width:220px}
+.risk i s{display:block;height:100%;background:var(--c)}
+.reasons{margin:8px 0 0;padding-left:18px;font-size:13px}
+.mail{margin:12px 18px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mail-h{padding:12px 14px;background:var(--soft);font-size:13px;border-bottom:1px solid var(--line)}
+.mail-h div{color:var(--muted)}
+.mail pre{margin:0;padding:14px;white-space:pre-wrap;font:14px/1.55 var(--sans)}
+.summary{margin:12px 18px 0;font-size:14px;padding:12px 14px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0}
+.src{font-size:12px;color:var(--muted);margin:6px 18px 0}
+
+/* dashboard */
+.strip{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--line);margin:10px 0 8px}
+.strip div{transition:width .4s}
+.legend{display:flex;gap:22px;flex-wrap:wrap;font-size:14px}
+.legend b{font-size:20px;font-weight:700;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--soft)}
+td.sum{color:var(--muted);max-width:420px}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12.5px;font-weight:600}
+.pill.approved{background:var(--ok-soft);color:var(--ok)}.pill.pending{background:var(--warn-soft);color:var(--warn)}.pill.rejected{background:var(--bad-soft);color:var(--bad)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 12px;cursor:pointer;font-size:13px}
+.filters button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line)}
+.scroll{overflow-x:auto}
+.mono{font-family:var(--mono);font-size:12.5px}
+
+/* drawer */
+.veil{position:fixed;inset:0;background:rgba(22,33,58,.4);display:none;z-index:30}
+.veil.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100%);background:var(--paper);overflow:auto;z-index:31;transform:translateX(100%);transition:transform .25s}
+.drawer.on{transform:none}
+.drawer-h{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+.drawer-h h2{margin:0;font-size:17px}
+.x{background:none;border:1px solid var(--line);border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:16px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><i>✓</i>VendorGate</div>
+  <nav role="tablist">
+    <button role="tab" id="tab-run" aria-selected="true">Review a vendor</button>
+    <button role="tab" id="tab-dash" aria-selected="false">Dashboard</button>
+  </nav>
+  <div class="engine"><span class="dot" id="gdot"></span><span id="gtxt">Checking AI…</span></div>
+</div></header>
+
+<main>
+<!-- REVIEW -->
+<section class="view on" id="view-run">
+  <div class="grid">
+    <div class="panel">
+      <h2>1 · Choose a scenario or edit the submission</h2>
+      <div class="pad"><div class="scen" id="scen"></div></div>
+      <div class="pad" style="padding-top:0">
+        <form id="form" onsubmit="return false">
+          <fieldset><legend>Company</legend><div class="f" id="f-company"></div></fieldset>
+          <fieldset><legend>Contact</legend><div class="f" id="f-contact"></div></fieldset>
+          <fieldset><legend>Bank account</legend><div class="f" id="f-bank"></div></fieldset>
+          <fieldset><legend>Documents attached</legend><div class="docs" id="docs"></div></fieldset>
+        </form>
+      </div>
+      <div class="bar"><button class="btn" id="run">Run review</button><span id="runmsg" style="font-size:13px;color:var(--muted)"></span></div>
+    </div>
+    <div class="panel" id="livepanel">
+      <h2>2 · Live review</h2>
+      <div id="live"><div class="empty"><b>Nothing running yet</b>Pick a scenario and select Run review. Each check appears here as it executes.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="view" id="view-dash">
+  <div class="panel" style="margin-bottom:20px"><div class="pad">
+    <div class="legend" id="legend"></div>
+    <div class="strip" id="strip"></div>
+  </div></div>
+  <div class="panel">
+    <div class="tools">
+      <div class="filters" id="filters"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="bulkmsg" style="font-size:13px;color:var(--muted)"></span>
+        <button class="btn ghost" id="bulk">Run all scenarios</button>
+        <button class="btn ghost" id="clear">Clear history</button>
+      </div>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>Received</th><th>Vendor</th><th>Country</th><th>Status</th><th>Risk</th><th>Summary</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="empty" id="norows" style="display:none"><b>No reviews yet</b>Run a scenario, or select Run all scenarios to fill this dashboard.</div>
+  </div>
+</section>
+</main>
+
+<div class="veil" id="veil"></div>
+<aside class="drawer" id="drawer" aria-label="Run detail">
+  <div class="drawer-h"><h2 id="dtitle"></h2><button class="x" id="dclose" aria-label="Close">✕</button></div>
+  <div id="dbody" style="padding:14px 0 30px"></div>
+</aside>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const COUNTRIES = {IN:'India',US:'United States',GB:'United Kingdom',DE:'Germany',SG:'Singapore',AE:'UAE',NG:'Nigeria',IR:'Iran',KP:'North Korea'};
+const FIELDS = {
+  company: [['legal_name','Legal company name','full'],['country','Country of registration','sel'],['entity_type','Entity type','type'],
+            ['tax_id','Tax ID (GSTIN / EIN / VAT)','mono'],['pan','PAN (India only)','mono'],['address','Registered address','full']],
+  contact: [['contact_name','Contact person'],['contact_email','Contact email'],['website','Website','full']],
+  bank:    [['bank_account_holder','Account holder name','full'],['bank_name','Bank name'],['bank_country','Bank country','sel'],
+            ['account_number','Account number','mono'],['ifsc','IFSC (India)','mono'],['routing_number','ABA routing (US)','mono'],['iban','IBAN','mono full']],
+};
+let CFG, currentScenario = null, busy = false, runs = [], filter = 'all';
+
+function buildForm(){
+  for (const [grp, list] of Object.entries(FIELDS)){
+    $('#f-'+grp).innerHTML = list.map(([k,l,t='']) => {
+      const cls = t.includes('full') ? 'fld full' : 'fld';
+      let inp;
+      if (t === 'sel') inp = `<select name="${k}"><option value="">Select…</option>${Object.entries(COUNTRIES).map(([c,n])=>`<option value="${c}">${c} — ${n}</option>`).join('')}</select>`;
+      else if (t === 'type') inp = `<select name="${k}">${['company','llp','partnership','individual'].map(o=>`<option>${o}</option>`).join('')}</select>`;
+      else inp = `<input name="${k}" class="${t.includes('mono')?'mono':''}" autocomplete="off">`;
+      return `<label class="${cls}">${l}${inp}</label>`;
+    }).join('');
+  }
+  $('#docs').innerHTML = Object.entries(CFG.doc_labels).map(([k,l]) =>
+    `<label class="doc" data-doc="${k}"><input type="checkbox"><span>${l}</span><input type="text" placeholder="Name shown on the document"></label>`).join('');
+  $('#docs').addEventListener('change', e => { const d = e.target.closest('.doc'); if (d) d.classList.toggle('on', d.querySelector('input[type=checkbox]').checked); });
+}
+function fillForm(data){
+  $('#form').reset();
+  document.querySelectorAll('.doc').forEach(d => d.classList.remove('on'));
+  for (const el of $('#form').elements) if (el.name) el.value = data[el.name] ?? (el.tagName==='SELECT' && el.name==='entity_type' ? 'company' : '');
+  for (const d of data.documents || []){
+    const row = document.querySelector(`.doc[data-doc="${d.type}"]`); if (!row) continue;
+    row.classList.add('on'); row.querySelector('input[type=checkbox]').checked = true; row.querySelector('input[type=text]').value = d.entity_name || '';
+  }
+}
+function readForm(){
+  const o = {};
+  for (const el of $('#form').elements) if (el.name) o[el.name] = el.value;
+  o.documents = [...document.querySelectorAll('.doc.on')].map(d => ({type: d.dataset.doc, entity_name: d.querySelector('input[type=text]').value}));
+  return o;
+}
+function buildScenarios(){
+  $('#scen').innerHTML = CFG.samples.map(s => `<button data-id="${s.id}" aria-pressed="false"><b>${esc(s.label)}</b><span>${esc(s.blurb)}</span></button>`).join('');
+  $('#scen').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const s = CFG.samples.find(x => x.id === b.dataset.id); currentScenario = s.id;
+    document.querySelectorAll('#scen button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fillForm(s.data);
+  });
+}
+
+/* ---------- renderer: turns pipeline events into the live tape ---------- */
+function makeRenderer(root){
+  root.innerHTML = '<div class="tape"></div>';
+  const tape = root.firstChild; let cur = null, list = null;
+  const ICON = {pass:'✓', info:'i', warn:'!', fail:'✕', critical:'■'};
+  return ev => {
+    if (ev.type === 'stage_start'){
+      cur = document.createElement('section'); cur.className = 'stage running';
+      cur.innerHTML = `<div class="node"></div><h3>${esc(ev.title)}</h3><div class="sd">${esc(ev.desc)}</div><ul class="checks"></ul>`;
+      tape.appendChild(cur); list = cur.querySelector('.checks');
+      cur.scrollIntoView({block:'nearest', behavior:'smooth'});
+    } else if (ev.type === 'check'){
+      const li = document.createElement('li'); li.className = 'chk ' + ev.status;
+      li.innerHTML = `<span class="ico">${ICON[ev.status]}</span><div><b>${esc(ev.name)}</b>${ev.ai?'<span class="tag">AI-assisted</span>':''}${ev.fraud&&['warn','fail'].includes(ev.status)?'<span class="tag fr">fraud signal</span>':''}<p>${esc(ev.detail)}</p></div>`;
+      list.appendChild(li);
+    } else if (ev.type === 'stage_end'){
+      cur.classList.remove('running'); cur.classList.add('end-' + ev.status);
+    } else if (ev.type === 'decision'){
+      const v = document.createElement('div'); v.className = 'verdict v-' + ev.status;
+      v.innerHTML = `<div class="stamp">${ev.status}</div><div><h4>${esc(ev.rule)}</h4>
+        <div class="risk">Risk score ${ev.risk_score}/100 <i><s style="width:${ev.risk_score}%"></s></i></div>
+        ${ev.reasons.length?`<ul class="reasons">${ev.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}</div>`;
+      root.appendChild(v);
+      v.scrollIntoView({block:'nearest', behavior:'smooth'});
+    } else if (ev.type === 'comms'){
+      const box = document.createElement('div');
+      box.innerHTML = `<div class="summary"><b>Plain-English summary.</b> ${esc(ev.summary)}</div>
+        <div class="src">Drafted by ${esc(ev.generated_by)}. A person reviews before anything is sent.</div>
+        <div class="mail"><div class="mail-h"><b>${esc(ev.email_subject)}</b><div>Draft message to vendor contact</div></div><pre>${esc(ev.email_body)}</pre></div>`;
+      root.appendChild(box);
+      box.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }
+  };
+}
+async function stream(sub, fast, onEvent){
+  const r = await fetch('/api/run' + (fast ? '?fast=1' : ''), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(sub)});
+  const reader = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+  for (;;){
+    const {done, value} = await reader.read(); if (done) break;
+    buf += dec.decode(value, {stream:true}); let i;
+    while ((i = buf.indexOf('\n')) >= 0){ const line = buf.slice(0, i); buf = buf.slice(i + 1); if (line.trim()) onEvent(JSON.parse(line)); }
+  }
+}
+
+/* ---------- actions ---------- */
+$('#run').onclick = async () => {
+  if (busy) return; busy = true; $('#run').disabled = true; $('#runmsg').textContent = 'Reviewing…';
+  const handle = makeRenderer($('#live'));
+  try { await stream(readForm(), false, handle); $('#runmsg').textContent = 'Done — saved to the dashboard.'; }
+  catch (e) { $('#live').insertAdjacentHTML('beforeend', `<div class="empty"><b>The review could not finish</b>${esc(e.message)}. Check the server log and run again.</div>`); $('#runmsg').textContent = ''; }
+  busy = false; $('#run').disabled = false; loadRuns();
+};
+$('#bulk').onclick = async () => {
+  if (busy) return; busy = true; $('#bulk').disabled = true;
+  for (let i = 0; i < CFG.samples.length; i++){
+    $('#bulkmsg').textContent = `Running ${i+1} of ${CFG.samples.length}…`;
+    await stream(CFG.samples[i].data, true, () => {});
+  }
+  $('#bulkmsg').textContent = ''; busy = false; $('#bulk').disabled = false; loadRuns();
+};
+$('#clear').onclick = async () => { if (confirm('Delete all review history?')){ await fetch('/api/runs', {method:'DELETE'}); loadRuns(); } };
+
+async function loadRuns(){ runs = await (await fetch('/api/runs')).json(); drawDash(); }
+function drawDash(){
+  const cnt = {approved:0, pending:0, rejected:0}; runs.forEach(r => cnt[r.status]++);
+  const n = runs.length || 1;
+  $('#legend').innerHTML = `<span><b>${runs.length}</b>reviewed</span>` + [['approved','var(--ok)'],['pending','var(--warn)'],['rejected','var(--bad)']]
+    .map(([k,c]) => `<span style="color:${c}"><b>${cnt[k]}</b>${k}</span>`).join('') +
+    `<span style="color:var(--muted)"><b>${runs.length ? Math.round(runs.reduce((a,r)=>a+r.risk_score,0)/runs.length) : 0}</b>avg risk</span>`;
+  $('#strip').innerHTML = [['approved','var(--ok)'],['pending','var(--warn)'],['rejected','var(--bad)']]
+    .map(([k,c]) => `<div style="width:${cnt[k]/n*100}%;background:${c}"></div>`).join('');
+  $('#filters').innerHTML = ['all','approved','pending','rejected'].map(f => `<button data-f="${f}" aria-pressed="${filter===f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('');
+  const shown = runs.filter(r => filter === 'all' || r.status === filter);
+  $('#norows').style.display = shown.length ? 'none' : 'block';
+  $('#rows').innerHTML = shown.map(r => `<tr data-id="${r.id}"><td class="mono">${new Date(r.created_at).toLocaleString([], {dateStyle:'short', timeStyle:'short'})}</td>
+    <td><b>${esc(r.legal_name)}</b></td><td>${esc(r.country)}</td><td><span class="pill ${r.status}">${r.status}</span></td>
+    <td class="mono">${r.risk_score}</td><td class="sum">${esc(r.summary)}</td></tr>`).join('');
+}
+$('#filters').onclick = e => { const b = e.target.closest('button'); if (b){ filter = b.dataset.f; drawDash(); } };
+$('#rows').onclick = async e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  const d = await (await fetch('/api/runs/' + tr.dataset.id)).json();
+  $('#dtitle').textContent = d.legal_name;
+  const render = makeRenderer($('#dbody')); d.events.forEach(render);
+  $('#veil').classList.add('on'); $('#drawer').classList.add('on');
+};
+const closeDrawer = () => { $('#veil').classList.remove('on'); $('#drawer').classList.remove('on'); };
+$('#veil').onclick = closeDrawer; $('#dclose').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* tabs */
+function tab(which){
+  $('#view-run').classList.toggle('on', which === 'run'); $('#view-dash').classList.toggle('on', which === 'dash');
+  $('#tab-run').setAttribute('aria-selected', which === 'run'); $('#tab-dash').setAttribute('aria-selected', which === 'dash');
+  if (which === 'dash') loadRuns();
+}
+$('#tab-run').onclick = () => tab('run'); $('#tab-dash').onclick = () => tab('dash');
+
+(async function init(){
+  CFG = await (await fetch('/api/config')).json();
+  $('#gdot').classList.toggle('on', CFG.groq);
+  $('#gtxt').textContent = CFG.groq ? `AI: Groq · ${CFG.model}` : 'AI offline — using template fallback';
+  buildForm(); buildScenarios();
+  document.querySelector('#scen button').click();
+  loadRuns();
+})();
+</script>
+</body>
+</html>
